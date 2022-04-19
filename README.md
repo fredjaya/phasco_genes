@@ -1,7 +1,13 @@
-# phasco_genesgenes.bed -h input.vcf.gz > output.vcf
+# phasco_genes
 Analysis of Koala gene families
 
 ## Dependencies and Installation
+```
+conda env create -f env.yml
+conda activate phasco-genes
+```
+
+TODO: Test conda on fresh machine
 
 ## Data prep
 
@@ -20,6 +26,7 @@ tabix -R genes.bed -h input.vcf.gz > output.vcf
 ```
 
 TODO: add gff2bed process?
+TODO: discuss with others regarding long-term inputs - always joint-called? single-sample would be better to run in parallel
 
 
 ## Nextflow
