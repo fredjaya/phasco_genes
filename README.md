@@ -8,6 +8,7 @@ conda activate phasco-genes
 ```
 
 TODO: Test conda on fresh machine
+TODO: How to install R package [ozmaps](https://github.com/mdsumner/ozmaps) outside of conda?
 
 ## Data prep
 

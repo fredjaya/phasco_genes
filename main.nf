@@ -25,24 +25,43 @@ process genes_from_vcf {
         
 }
 
-process hom {
+process het {
     
     /* Calculate the observed (Ho) and expected homozygosity (He), and 
      * inbreeding coefficient (F) in each gene region
      */ 
 
-    publishDir "${params.out}/hom"
+    publishDir "${params.out}/het"
 
     input:
         path gene from genes_ch
 
     output:
-        path "*.het" //into
+        path "*.het" into het_ch
         //path "*.log" nf outputs this as the .command.log
     
     script:
     """
     vcftools --vcf ${gene} --out ${gene.simpleName} --het
+    """
+        
+}
+
+process vis_hom {
+    
+    // Visualise vcftools --het output individuals on map
+
+    publishDir "${params.out}/hom"
+
+    input:
+        path het from het_ch
+
+    output:
+        path "*_het.png"
+    
+    script:
+    """
+    Rscript visualise_hom.R ${metadata} ${het} ${het.simpleName}
     """
         
 }
