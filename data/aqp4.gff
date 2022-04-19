@@ -1,0 +1,13 @@
+MSTS01000185.1	ensembl	gene	429667	438186	.	+	.	ID=gene:ENSPCIG00000024767;Name=AQP4;biotype=protein_coding;description=aquaporin 4 [Source:HGNC Symbol%3BAcc:HGNC:637];gene_id=ENSPCIG00000024767;logic_name=ensembl;version=2
+MSTS01000185.1	ensembl	mRNA	429667	438186	.	+	.	ID=transcript:ENSPCIT00000041088;Parent=gene:ENSPCIG00000024767;Name=AQP4-201;biotype=protein_coding;transcript_id=ENSPCIT00000041088;version=2
+MSTS01000185.1	ensembl	five_prime_UTR	429667	429792	.	+	.	Parent=transcript:ENSPCIT00000041088
+MSTS01000185.1	ensembl	exon	429667	429824	.	+	.	Parent=transcript:ENSPCIT00000041088;Name=ENSPCIE00000191798;constitutive=0;ensembl_end_phase=2;ensembl_phase=-1;exon_id=ENSPCIE00000191798;rank=1;version=1
+MSTS01000185.1	ensembl	CDS	429793	429824	.	+	0	ID=CDS:ENSPCIP00000033374;Parent=transcript:ENSPCIT00000041088;protein_id=ENSPCIP00000033374
+MSTS01000185.1	ensembl	exon	433465	433879	.	+	.	Parent=transcript:ENSPCIT00000041088;Name=ENSPCIE00000191799;constitutive=0;ensembl_end_phase=0;ensembl_phase=2;exon_id=ENSPCIE00000191799;rank=2;version=2
+MSTS01000185.1	ensembl	CDS	433465	433879	.	+	1	ID=CDS:ENSPCIP00000033374;Parent=transcript:ENSPCIT00000041088;protein_id=ENSPCIP00000033374
+MSTS01000185.1	ensembl	exon	434762	434926	.	+	.	Parent=transcript:ENSPCIT00000041088;Name=ENSPCIE00000191800;constitutive=1;ensembl_end_phase=0;ensembl_phase=0;exon_id=ENSPCIE00000191800;rank=3;version=1
+MSTS01000185.1	ensembl	CDS	434762	434926	.	+	0	ID=CDS:ENSPCIP00000033374;Parent=transcript:ENSPCIT00000041088;protein_id=ENSPCIP00000033374
+MSTS01000185.1	ensembl	exon	435208	435288	.	+	.	Parent=transcript:ENSPCIT00000041088;Name=ENSPCIE00000191801;constitutive=0;ensembl_end_phase=0;ensembl_phase=0;exon_id=ENSPCIE00000191801;rank=4;version=1
+MSTS01000185.1	ensembl	CDS	435208	435288	.	+	0	ID=CDS:ENSPCIP00000033374;Parent=transcript:ENSPCIT00000041088;protein_id=ENSPCIP00000033374
+MSTS01000185.1	ensembl	exon	437908	438186	.	+	.	Parent=transcript:ENSPCIT00000041088;Name=ENSPCIE00000191802;constitutive=1;ensembl_end_phase=-1;ensembl_phase=0;exon_id=ENSPCIE00000191802;rank=5;version=2
+MSTS01000185.1	ensembl	CDS	437908	438186	.	+	0	ID=CDS:ENSPCIP00000033374;Parent=transcript:ENSPCIT00000041088;protein_id=ENSPCIP00000033374

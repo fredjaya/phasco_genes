@@ -1,0 +1,7 @@
+MSTS01000002.1	ensembl	gene	8561901	8575359	.	+	.	ID=gene:ENSPCIG00000034701;Name=BMP2;biotype=protein_coding;description=bone morphogenetic protein 2 [Source:HGNC Symbol%3BAcc:HGNC:1069];gene_id=ENSPCIG00000034701;logic_name=ensembl;version=1
+MSTS01000002.1	ensembl	mRNA	8561901	8575359	.	+	.	ID=transcript:ENSPCIT00000064015;Parent=gene:ENSPCIG00000034701;Name=BMP2-201;biotype=protein_coding;transcript_id=ENSPCIT00000064015;version=1
+MSTS01000002.1	ensembl	exon	8561901	8562603	.	+	.	Parent=transcript:ENSPCIT00000064015;Name=ENSPCIE00000302664;constitutive=1;ensembl_end_phase=1;ensembl_phase=-1;exon_id=ENSPCIE00000302664;rank=1;version=1
+MSTS01000002.1	ensembl	CDS	8561901	8562603	.	+	0	ID=CDS:ENSPCIP00000054235;Parent=transcript:ENSPCIT00000064015;protein_id=ENSPCIP00000054235
+MSTS01000002.1	ensembl	CDS	8573689	8574533	.	+	2	ID=CDS:ENSPCIP00000054235;Parent=transcript:ENSPCIT00000064015;protein_id=ENSPCIP00000054235
+MSTS01000002.1	ensembl	exon	8573689	8575359	.	+	.	Parent=transcript:ENSPCIT00000064015;Name=ENSPCIE00000306441;constitutive=1;ensembl_end_phase=-1;ensembl_phase=1;exon_id=ENSPCIE00000306441;rank=2;version=1
+MSTS01000002.1	ensembl	three_prime_UTR	8574534	8575359	.	+	.	Parent=transcript:ENSPCIT00000064015
