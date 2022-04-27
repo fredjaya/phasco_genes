@@ -8,7 +8,7 @@ process genes_from_vcf {
      * joint called .vcf. Currently CDS only.
      */ 
    
-    publishDir "${params.out}/genes"
+    publishDir "${params.out}/extracted_genes"
 
     input:
         path vcf from params.vcf
@@ -16,7 +16,7 @@ process genes_from_vcf {
         path bed from bed_ch
 
     output:
-        path "*.vcf" into genes_het_ch, genes_raw_ch
+        path "*.vcf" into genes_het_ch, genes_raw_ch, genes_prune_ch, genes_pca_pruned_ch, genes_pca_unpruned_ch
     
     script:
     """
@@ -73,7 +73,7 @@ process convert_raw {
     /* Convert vcf to .raw format to input in R
      */ 
     
-    publishDir "${params.out}/genes"
+    publishDir "${params.out}/convert_raw"
 
     input:
         path gene from genes_raw_ch
@@ -89,5 +89,92 @@ process convert_raw {
     """
     vcftools --vcf ${gene} --plink-tped --out ${gene.simpleName} 
     plink --tped ${gene.simpleName}.tped --tfam ${gene.simpleName}.tfam --recodeA --out ${gene.simpleName}  
+    """
+}
+
+process linkage_pruning {
+    
+    /* Prune linked sites for PCA
+     * 
+     * WARNING: unclear what the optimal parameters for --indep-pairwise are,
+     * particularly for single gene CDS'
+     * 
+     * Setting r^2 > 0.05 to be conservative.
+     */ 
+    
+    publishDir "${params.out}/pca_pruned"
+
+    input:
+        path gene from genes_prune_ch
+
+    output:
+        path "*.prune.in" into pruned_sites_ch
+        path "*.prune.out"
+        //path "*.log" nf outputs this as the .command.log
+    
+    script:
+    """
+    plink2 --vcf ${gene} \
+        --double-id \
+        --allow-extra-chr \
+        --set-missing-var-ids @:# \
+        --out ${gene.simpleName} \
+        --indep-pairwise 50 10 0.05
+    """
+}
+
+process pca_pruned {
+    
+    /* Run PCA with linked sites pruned
+     */ 
+    
+    publishDir "${params.out}/pca_pruned"
+
+    input:
+        path gene from genes_pca_pruned_ch
+        path pruned_sites from pruned_sites_ch
+
+    output:
+        path "*.eigenval" optional true
+        path "*.eigenvec" optional true
+        //path "*.log" nf outputs this as the .command.log
+    
+    script:
+    """
+    plink2 --vcf ${gene} \
+        --double-id \
+        --allow-extra-chr \
+        --set-missing-var-ids @:# \
+        --out ${gene.simpleName} \
+        --extract ${pruned_sites} \
+        --pca
+    """
+}
+
+process pca_unpruned {
+    
+    /* Run PCA without linkage pruning
+     *
+     * Including this as all sites are likely to be thrown out in gene CDS
+     */ 
+    
+    publishDir "${params.out}/pca_unpruned"
+
+    input:
+        path gene from genes_pca_unpruned_ch
+
+    output:
+        path "*.eigenval"
+        path "*.eigenvec"
+        //path "*.log" nf outputs this as the .command.log
+    
+    script:
+    """
+    plink2 --vcf ${gene} \
+        --double-id \
+        --allow-extra-chr \
+        --set-missing-var-ids @:# \
+        --out ${gene.simpleName} \
+        --pca
     """
 }
