@@ -24,21 +24,16 @@ process split_bed {
     """
 }
 
-process genes_from_vcf {
-    
-    /* For each .bed file in bed_ch, extract gene region from a 
-     * joint called .vcf. Currently CDS only.
-     */ 
-   
+process extract_vcf_genes {
+    // Extract separate .vcf from individual .bed for per-gene analyses
     publishDir "${params.out}/extracted_genes"
-
     input:
         path vcf from params.vcf
         path tbi from params.tbi
         path regions from regions_ch
 
     output:
-        path "*.vcf" into genes_het_ch, genes_raw_ch, genes_prune_ch, genes_pca_pruned_ch, genes_pca_unpruned_ch
+        path "*.vcf" into vcf_genes_ch
     
     script:
     """
@@ -46,6 +41,27 @@ process genes_from_vcf {
     """
         
 }
+
+process extract_vcf_whole {
+    // Extract a single .vcf containing all gene regions for RDA
+    publishDir "${params.out}" 
+    input:
+        path vcf from params.vcf
+        path tbi from params.tbi
+        path bed from params.bed
+
+    output:
+        path "combined.vcf" into vcf_whole_ch
+    
+    script:
+    """
+    tabix -R ${bed} -h ${vcf} > combined.vcf
+    """
+}
+
+vcf_genes_ch
+    .mix(vcf_whole_ch)
+    .into { genes_het_ch; genes_raw_ch; genes_prune_ch; genes_pca_pruned_ch; genes_pca_unpruned_ch }
 
 process het {
     

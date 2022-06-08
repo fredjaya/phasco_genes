@@ -23,6 +23,7 @@ conda activate phasco-genes
 You will need to manually install several R packages:  
 ```
 bin/install_packages.R
+```
 
 ## Input data
 
@@ -41,11 +42,6 @@ input .vcf/gz should be bgzipped and tabixd.
 Then convert to .bed and retain only CDS regions
 ```
 gff2bed < /data/*.gff | grep -P '\tCDS\t' > /data/*.bed
-```
-
-and query the regions:
-```
-tabix -R genes.bed -h input.vcf.gz > output.vcf
 ```
 
 ### 3. Preparing environmental variables  
