@@ -1,6 +1,28 @@
 #!/usr/bin/env nextflow
 
-bed_ch = Channel.fromPath("${params.bed}/*.bed")
+nextflow.enable.dsl = 1
+
+Channel
+    .fromPath(params.bed)
+    .splitText(each: { it.split()[6] } )
+    .unique()
+    .set { gene_list_ch }
+
+process split_bed {
+    // Split input .bed into multiple files according to gene
+    publishDir "${params.out}/split_bed"
+    input: 
+        path bed from params.bed
+        val gene from gene_list_ch
+
+    output:
+        path "*.bed" into regions_ch
+
+    script:
+    """
+    grep ${gene} ${bed} > ${gene}.bed
+    """
+}
 
 process genes_from_vcf {
     
@@ -13,14 +35,14 @@ process genes_from_vcf {
     input:
         path vcf from params.vcf
         path tbi from params.tbi
-        path bed from bed_ch
+        path regions from regions_ch
 
     output:
         path "*.vcf" into genes_het_ch, genes_raw_ch, genes_prune_ch, genes_pca_pruned_ch, genes_pca_unpruned_ch
     
     script:
     """
-    tabix -R ${bed} -h ${vcf} > ${bed.simpleName}.vcf
+    tabix -R ${regions} -h ${vcf} > ${regions.simpleName}.vcf
     """
         
 }
@@ -129,7 +151,9 @@ process pca_pruned {
      */ 
     
     publishDir "${params.out}/pca_pruned"
-
+    errorStrategy { task.exitstatus = 13 ? 'ignore' : 'terminate' }
+    // 13: No variants remaining after main filters
+    
     input:
         path gene from genes_pca_pruned_ch
         path pruned_sites from pruned_sites_ch
@@ -145,7 +169,7 @@ process pca_pruned {
         --double-id \
         --allow-extra-chr \
         --set-missing-var-ids @:# \
-        --out ${gene.simpleName} \
+        --out ${gene.simpleName}_pruned \
         --extract ${pruned_sites} \
         --pca
     """
@@ -159,6 +183,8 @@ process pca_unpruned {
      */ 
     
     publishDir "${params.out}/pca_unpruned"
+    errorStrategy { task.exitstatus = 13 ? 'ignore' : 'terminate' }
+    // 13: Failed to extract eigenvector(s) from GRM
 
     input:
         path gene from genes_pca_unpruned_ch
