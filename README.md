@@ -1,6 +1,8 @@
 # phasco_genes
 Analysis of Koala gene families
+
 ## Overview  
+
 *What does this pipeline do?*  
 
 ## Dependencies and Installation  
@@ -21,7 +23,6 @@ conda activate phasco-genes
 You will need to manually install several R packages:  
 ```
 bin/install_packages.R
-```
 
 ## Input data
 
