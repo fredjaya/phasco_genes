@@ -37,7 +37,7 @@ input .vcf/gz should be bgzipped and tabixd.
 
 `/data/*` are gene regions of the longest transcript.
 
-### 2. Preparing the annotation file  
+### 3. Preparing the annotation file  
 
 Then convert to .bed and retain only CDS regions
 ```
@@ -46,13 +46,11 @@ gff2bed < /data/*.gff | grep -P '\tCDS\t' > /data/*.bed
 
 ### 3. Preparing environmental variables  
 
-Need to do some manual work here/hardcoding to prepare your environmental variables (e.g. remove collinear variables), but once that's done you're set!  
-
-- Retrieve environmental rasters i.e. WorldClim
-- Prepare and merge predictors (climate, pop struc, geography)
-```
-
-```
+- Upload metadata with lat/longs to Spatial ALA  
+- Select layers or upload `data/layerList.csv`  
+- Export  
+- ???  
+- Profit  
 
 ## Running the pipeline (nextflow)
 paths currently hardcoded in `nextflow.config`
