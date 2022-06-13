@@ -62,11 +62,21 @@ nextflow run main.nf
 
 ```mermaid
 graph TD;
-	Koala metadata (lat/longs) --> Atlas of Living Australia Spatial Portal;
-	Atlas of Living Australia Spatial Portal --> Climate variables;
-	Climate variables --> 00_prepare_predictor_variables;
-	Neutral population structure (principal components) --> 00_prepare_predictor_variables;
-	Koala metadata (lat/longs) --> 00_prepare_predictor_variables;
+    subgraph Predictor variables;
+    p1(Koala metadata - coordinates) --> p2(Atlas of Living Australia Spatial Portal);
+    p2 --> p3(Climate variables) --> p4(00_prepare_predictor_variables.R);
+    p5(Neutral population structure - PCs)-->p4;
+    p1-->p4;
+    p4-->p6(predictors.rds);
+    end
+
+    subgraph "Explanatory variables (genotype data)"
+    g1(joint called .vcf)-->g2(nextflow main.nf);
+    g3(.bed file)-->g2;
+    g2-->g4(per-gene .vcfs) & g5(whole-genome .vcfs);
+    end
+
+    g5 & p6-->r1(Redundancy analyses);
 ```
 
 ## Ideas, to-do, scratch
