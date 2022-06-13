@@ -58,6 +58,17 @@ paths currently hardcoded in `nextflow.config`
 nextflow run main.nf
 ```
 
+## Flowchart  
+
+```mermaid
+graph TD;
+	Koala metadata (lat/longs) --> Atlas of Living Australia Spatial Portal;
+	Atlas of Living Australia Spatial Portal --> Climate variables;
+	Climate variables --> 00_prepare_predictor_variables;
+	Neutral population structure (principal components) --> 00_prepare_predictor_variables;
+	Koala metadata (lat/longs) --> 00_prepare_predictor_variables;
+```
+
 ## Ideas, to-do, scratch
 
 How are results impacted when conducting GEAs on individual genes (CDS) vs. combined? Also consider whether it's worth splitting .bed file to parallelise extraction.
