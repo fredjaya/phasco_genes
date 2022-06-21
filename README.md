@@ -1,35 +1,82 @@
 # phasco_genes
-Analysis of Koala gene families
+Pipeline for investigating genotype-environment associations (GEA) in koala genomes.
 
-## Overview  
+## 1. Overview  
 
-*What does this pipeline do?*  
+This pipeline aims to identify koala loci likely to have adapated to various climate conditions. It largely utilises redundancy analyses (RDA) as described in [Capblancq and Forester (2021)](https://doi.org/10.1111/2041-210X.13722) and [Forester et al. (2018)](https://popgen.nescent.org/2018-03-27_RDA_GEA.html).  
 
-## Dependencies and Installation  
+It utilises R, nextflow, and a load of command-line tools to deal with the pre-processing of genome data and climatic variables for RDA.
+
+### 1.1 Workflow  
+
+```mermaid
+graph TD
+    subgraph "Genotype inputs (Explanatory variables)"
+        g1[[.bed]] & g2[[.vcf]] & g3[[.tbi]]
+    end
+
+    subgraph "nextflow (main.nf)"
+        g1-->split_bed-->extract_vcf_genes
+        g1--> extract_vcf_whole
+        g2 & g3-->extract_vcf_genes & extract_vcf_whole
+        extract_vcf_genes & extract_vcf_whole-->het & pca_unpruned & linkage_pruning & convert_raw
+        linkage_pruning-->pca_pruned
+        convert_raw-->n4[["SNPs (.raw)"]]
+    end
+
+    subgraph Predictor variable inputs
+        p1[["Koala metadata (coordinates)"]] & p2[["Population structure (PCs)"]]
+    end
+
+        p1-- Upload to ---p3["Atlas of Living Australia - spatial portal"]
+        p3-- Select climate layers ---p4[Climate variables per coordinate]
+        p4 & p2-->p5(00_prepare_predictor_variables.R)
+        p5-->p6[[predictors.rds]]
+
+    n4 & p6 --> r1 & r3
+    subgraph Redundancy analysis
+        r1["climate | (structure)"]-->r2[Identify outlier SNPs]
+        r3[Partial RDA models]
+    end
+
+    subgraph LEGEND
+        l1[process/script/function]
+        l2[[file]]
+    end
+```  
+
+## 2. Dependencies and Installation  
 
 First, download this repo:  
 ```
 git clone https://github.com/fredjaya/phasco_genes.git
 ```  
 
-This pipeline utilises nextflow, R, and a load of command-line tools. There are quite a few dependencies to install, but conda lets you download them in one go. [install miniconda](https://docs.conda.io/en/latest/miniconda.html).  
+Next, [install miniconda](https://docs.conda.io/en/latest/miniconda.html). There are quite a few dependencies to install, but conda will allow you to download R, nextflow and the command-line tools easily.
 
-Next, create a conda environment and install the command-line tools:  
+Create a conda environment, install the tools using the yaml file, and activate the environment:  
 ```
 conda env create -f env.yml
 conda activate phasco-genes
 ```  
 
-You will need to manually install several R packages:  
+Install R packages:  
 ```
-bin/install_packages.R
+Rscript bin/install_packages.R
 ```
 
-## Input data
+## 3. Input data
 
-1. Genome data with all individuals (joint-called) `.vcf(.gz)`  
-2. Annotation file of CDS regions to extract `.gff`  
-3. Environmental variables i.e. rasters `.tif`  
+**Predictor variables**  
+1. Climate variables  
+2. Population structure  
+
+**Explanatory variables (genotype)**  
+3. Whole genome resequencing data `.vcf(.gz)`  
+4. Annotation file `.bed`  
+
+### 3.1 Climate variables  
+
 
 ### 1. Preparing the genome data  
 
@@ -58,27 +105,6 @@ paths currently hardcoded in `nextflow.config`
 nextflow run main.nf
 ```
 
-## Flowchart  
-
-```mermaid
-graph TD;
-    subgraph Predictor variables;
-    p1(Koala metadata - coordinates) --> p2(Atlas of Living Australia Spatial Portal);
-    p2 --> p3(Climate variables) --> p4(00_prepare_predictor_variables.R);
-    p5(Neutral population structure - PCs)-->p4;
-    p1-->p4;
-    p4-->p6(predictors.rds);
-    end
-
-    subgraph "Explanatory variables (genotype data)"
-    g1(joint called .vcf)-->g2(nextflow main.nf);
-    g3(.bed file)-->g2;
-    g2-->g4(per-gene .vcfs) & g5(whole-genome .vcfs);
-    end
-
-    g5 & p6-->r1(Redundancy analyses);
-```
-
 ## Ideas, to-do, scratch
 
 How are results impacted when conducting GEAs on individual genes (CDS) vs. combined? Also consider whether it's worth splitting .bed file to parallelise extraction.
@@ -95,4 +121,16 @@ Rscripts to visualise heterozygosity, allele frequency etc. Better yet, generate
 
 Add documentation and usage CLI.
 
-Failed to extract eigenvector(s) from GRM with exonID_MHCI-3-partial. Setting errorStrat for pca_unpruned to ignore cause not amportant.
+Failed to extract eigenvector(s) from GRM with exonID_MHCI-3-partial. Setting errorStrat for pca_unpruned to ignore cause not important.
+
+When exporting nextflow project - make sure to copy hardlinks. e.g. `rsync -L`
+
+Incorporate .R scripts in nextflow?
+
+Add script for visualising predictor variables? i.e. map with climate variables per sample, climate variable distributions, whole-genome PCA.  
+
+Can't match 2/308 vcf names to koalas in MHC data.
+
+How to deal with missing SNPs in data?  
+
+Add PCA with neutral SNPs

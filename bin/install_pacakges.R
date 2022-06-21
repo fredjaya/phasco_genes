@@ -1,5 +1,10 @@
 #!/usr/bin/Rscript
 
+# Set CRAN mirror
+r = getOption("repos")
+r["CRAN"] = "https://cran.csiro.au/"
+options(repos = r)
+
 # Data wrangling
 install.packages("readxl")
 install.packages("dplyr")
@@ -12,10 +17,10 @@ install.packages("viridis")
 install.packages("cowplot")
 install.packages("ggnewscale")
 
-# Spatial/maps
-install.packages("ozmaps")
-install.packages("sf")
-install.packages("raster")
+# Spatial/maps (don't need these for now)
+#install.packages("ozmaps")
+#install.packages("sf")
+#install.packages("raster")
 
 # Statistical analyses
 install.packages("vegan")
