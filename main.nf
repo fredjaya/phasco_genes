@@ -51,7 +51,7 @@ process extract_vcf_whole {
         path bed from params.bed
 
     output:
-        path "combined.vcf" into vcf_whole_ch
+        path "combined.vcf" into vcf_whole_ch, vcf_whole_raw
     
     script:
     """
@@ -61,7 +61,7 @@ process extract_vcf_whole {
 
 vcf_genes_ch
     .mix(vcf_whole_ch)
-    .into { genes_het_ch; genes_raw_ch; genes_prune_ch; genes_pca_pruned_ch; genes_pca_unpruned_ch }
+    .into { genes_het_ch; genes_prune_ch; genes_pca_pruned_ch; genes_pca_unpruned_ch }
 
 process het {
     
@@ -114,7 +114,7 @@ process convert_raw {
     publishDir "${params.out}/convert_raw"
 
     input:
-        path gene from genes_raw_ch
+        path gene from vcf_whole_raw
 
     output:
         path "*.tped"
@@ -141,8 +141,10 @@ process linkage_pruning {
      */ 
     
     publishDir "${params.out}/pca_pruned"
+    errorStrategy { task.exitstatus = 7 ? 'ignore' : 'terminate' }
+    // Error: No variants on --vcf file
 
-    input:
+	input:
         path gene from genes_prune_ch
 
     output:

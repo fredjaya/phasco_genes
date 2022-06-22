@@ -72,40 +72,69 @@ Rscript bin/install_packages.R
 2. Population structure  
 
 **Explanatory variables (genotype)**  
-3. Whole genome resequencing data `.vcf(.gz)`  
+3. Whole genome resequencing data `.vcf.gz` and `.tbi`  
 4. Annotation file `.bed`  
 
 ### 3.1 Climate variables  
 
+For the climate variables, I've opted to use the Atlas of Living Australia (ALA) to avoid having to deal with (downloading) multiple, big rasters from different sources. ALA has a huge selection of spatial layers to select from. A complete list can be found [here](https://spatial.ala.org.au/layers).  
 
-### 1. Preparing the genome data  
+The spatial portal allows you to:  
+1. Upload a .csv file containing sample/koala coordinates (latitude, longitude).  
+2. Select (multiple) spatial climate data such as temperature, precipitation and so on.  
+3. Download the climate data for each coordinate.  
 
-input .vcf/gz should be bgzipped and tabixd.
+**Uploading coordinate data to ALA**  
+`example/metadata_n637.csv` contains the coordinates for all 637 samples koalas.  
 
-`/data/*` are gene regions of the longest transcript.
+Go to the [spatial portal on ALA](https://spatial.ala.org.au/). Create a free account and login.  
 
-### 3. Preparing the annotation file  
+Go to `Import` --> `Points` --> `Load File` --> Select `example/metadata_n637.csv` --> Select `Upload file` --> Select `Upload your data`.  
 
-Then convert to .bed and retain only CDS regions
+**Selecting and downloading climate data**  
+Go to `Export` --> `Points` --> Under `3. Select layers` choose all relevant layers --> `Next >` --> Select `Industry/application` --> `Next >` --> `Download now`  
+
+Alternatively, `example/layerList.csv` contains a list of 10 layers selected according to [Lott et al. (2022)](https://onlinelibrary.wiley.com/doi/abs/10.1111/mec.16446). This file was generated the first time these layers were selected and downloaded. You can upload this file in place of selecting the individuals layers.   
+
+### 3.2 Population structure  
+
+One of the key strengths of RDA is the ability to test for the contribution of confounding factors such as population structure, and geography (i.e. spatial autocorrelation). Currently using Elle's PCA for n = 308 koalas. PCA processes are already implemented but need to be explicitly re-directed into RDA processes.  
+
+### 3.3 Whole genome resequencing data  
+
+For RDAs, the response variable is per-loci genotype data. This can be information such as SNPs, a measure of diversity (heterozygosity), or allele frequencies. Here, we use SNPs in `.vcf.gz` format. This file should contain all individuals you wish to analyse. 
+
+If you have a `.vcf` file, it will need to be compressed using bgzip. Further, all `.vcf.gz` files must have a corresponding index file `.tbi`. The `.tbi` is required by the pipeline for extracting genes out of the `.vcf.gz`. 
+
+The pipeline has been tested using joint-genotyped variants output by Illumina's DRAGEN which outputs these two files in the correct format, but in case you need to compress and index a `.vcf` file:  
+```
+bgzip -c file.vcf > file.vcf.gz
+tabix -p vcf file.vcf.gz
+```
+
+### 3.4 Annotation file  
+
+(INCOMPLETE SECTION)
+
+The `.bed` file contains the regions to extract from the genome file.  
+
+Converting .gff to .bed
 ```
 gff2bed < /data/*.gff | grep -P '\tCDS\t' > /data/*.bed
 ```
 
-### 3. Preparing environmental variables  
+## 4. Running the pipeline (nextflow)  
 
-- Upload metadata with lat/longs to Spatial ALA  
-- Select layers or upload `data/layerList.csv`  
-- Export  
-- ???  
-- Profit  
+With all input data ready, we can run the pipeline to process the genotype data.  
 
-## Running the pipeline (nextflow)
+In summary, nextflow deals with processing the genotype data side of things. It reads in the SNPs and annotations to extract relevant regions, does some pre-processing on them so they're complaint for use with RDAs and R. See flowchart above.  
+
 paths currently hardcoded in `nextflow.config`
 ```
 nextflow run main.nf
 ```
 
-## Ideas, to-do, scratch
+## Ideas, to-do, scratch (ignore if not Fred)  
 
 How are results impacted when conducting GEAs on individual genes (CDS) vs. combined? Also consider whether it's worth splitting .bed file to parallelise extraction.
 
@@ -133,4 +162,8 @@ Can't match 2/308 vcf names to koalas in MHC data.
 
 How to deal with missing SNPs in data?  
 
-Add PCA with neutral SNPs
+Add PCA with **neutral** SNPs
+
+Account for installation and usage on Windows.  
+
+Changed convert_raw to only run on whole vcf, not single genes cause of error on tiny test data.  
