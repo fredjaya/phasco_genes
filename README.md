@@ -123,6 +123,11 @@ Converting .gff to .bed
 gff2bed < /data/*.gff | grep -P '\tCDS\t' > /data/*.bed
 ```
 
+### 3.5 Merging and preparing predictor variables  
+
+At the moment, replace hardcoded links in `src/00_prepare_predictor_variables.R` and run
+
+
 ## 4. Running the pipeline (nextflow)  
 
 With all input data ready, we can run the pipeline to process the genotype data.  
@@ -167,3 +172,5 @@ Add PCA with **neutral** SNPs
 Account for installation and usage on Windows.  
 
 Changed convert_raw to only run on whole vcf, not single genes cause of error on tiny test data.  
+
+softcode 00_prepare_predictor_variables.R you dummy

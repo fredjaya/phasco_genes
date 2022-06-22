@@ -1,0 +1,263 @@
+---
+title: "MHC GEA"
+author: "Fred Jaya"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = T,
+  warning = F,
+  fig.pos = 'H',
+  out.extra = "",
+  fig.width = 8
+)
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(psych)
+library(vegan)
+library(ggnewscale)
+```
+
+## Prepare predictor variables  
+
+Load predictor variables prepared with `src/00_prepare_predictor_variables.R`  
+
+```{r}
+predictors <- 
+  readRDS("~/GitHub/phasco_genes/data/predictors.rds") %>%
+  filter(!vcf.ID == "M49026_001" & !vcf.ID == "K2") # 2 koalas can't match sample names to 
+
+# Save names of climate variables for easier subsetting
+clim_vars <- names(predictors)[12:21]
+
+# Add vcf IDs to rownames because vegan::rda needs it
+rownames(predictors) <- predictors$vcf.ID 
+predictors <- predictors %>% select(-vcf.ID)
+```
+
+## Variable selection: removing correlated climate variables  
+
+First, see correlation (Spearman's) between all climate variables:  
+```{r}
+pairs.panels(predictors %>% select(clim_vars), ellipses = F, method = "spearman")
+```
+
+Removing all correlated variables (|rho| > 0.75)  
+1. Choose `rain_annMean` > `soil_moisture_annMean` because (rho = 0.9)  
+2. Therefore, `rain_annMean` > `temp_annRange` (rho = -0.76)  
+3. Choose `temp_annMeanMax` > `solar_annMean` (rho = 0.89)  
+4. Choose `elevation` > `temp_annMinMean` (rho = 0.84) as already have `temp_annMeanmax`  
+
+Subset "uncorrelated" variables and view again:  
+```{r}
+predictors <- 
+  predictors %>% 
+  select(-soil_moisture_annMean, -temp_annRange, -solar_annMean, -temp_annMinMean)
+clim_vars <- names(predictors)[11:16]
+
+pairs.panels(predictors %>% select(clim_vars), ellipses = F, method = "spearman")
+```
+
+## Prepare genotype data (response variables)  
+
+Read in SNPs, remove empty/irrelevant columns:  
+```{r}
+genotype <- 
+  read.table("~/GitHub/phasco_genes/example/combined.raw", header = T, row.names = 1) %>%
+  select(-c('IID', 'PAT', 'MAT', 'SEX', 'PHENOTYPE'))
+genotype <- genotype[!(row.names(genotype) %in% c("M49026_001", "K2")),]
+  
+# Ensure genotype and enviro are in the correct order for RDA
+genotype <- genotype[order(row.names(genotype)), ]
+predictors <- predictors[order(row.names(predictors)), ]
+```
+
+Check for missing SNPs. I think `vegan::rda` cannot handle NAs.  
+```{r}
+missing_snps <- 
+  genotype %>% 
+  summarise(across(everything(), ~ sum(is.na(.)))) %>%
+  pivot_longer(cols = everything(), names_to = "locus", values_to = "num_na")
+
+missing_snps %>%
+  ggplot(aes(x = num_na)) +
+  geom_histogram(binwidth = 1) +
+  theme_light()
+
+missing_snps %>%
+  ggplot(aes(x = num_na)) +
+  geom_histogram(binwidth = 1) +
+  coord_cartesian(xlim = c(0, 50)) +
+  theme_light()
+```
+
+413/1083 (38.13%) loci with no NAs. For now, subset and analyse loci with complete data.  
+```{r}
+complete_loci <- 
+  missing_snps %>%
+  filter(num_na == 0)
+
+genotype_complete <- 
+  genotype %>%
+  select(all_of(complete_loci$locus))
+
+#write.table(genotype_complete, "")
+```
+
+## Variance partitioning
+
+Partial RDA (pRDA) quantifies the contribution of different factors on genetic variation. Variables that can be used include genetic population structure, environmental variables, coordinates, etc.  
+
+```{r}
+# Filter individuals
+genotype <- 
+```
+
+```{r}
+# Model with selected variables, coordinates and states/LGAs
+prda_full <- rda(genotype_complete ~ temp_annMaxMean + rain_annMean + elevation + veg_index + soil_nutrients + soil_ph + PC1 + PC2 + PC3 + PC4 + PC5 + PC6, predictors, na.action = na.exclude, scale = T)
+r2_full <- RsquareAdj(prda_full)
+anova_full <- anova(prda_full)
+
+# Pure climate model
+prda_clim <- rda(genotype_complete ~ temp_annMaxMean + rain_annMean + elevation + veg_index + soil_nutrients + soil_ph + Condition(Longitude + Latitude + PC1 + PC2 + PC3 + PC4 + PC5 + PC6), predictors, na.action = na.exclude)
+r2_clim <- RsquareAdj(prda_clim)
+anova_clim <- anova(prda_clim)
+
+# Pure geography model
+prda_geo <- rda(genotype_complete ~ Longitude + Latitude +
+                  Condition(temp_annMaxMean + rain_annMean + elevation + veg_index + soil_nutrients + soil_ph + PC1 + PC2 + PC3 + PC4 + PC5 + PC6), predictors, na.action = na.exclude, scale = T)
+r2_geo <- RsquareAdj(prda_geo)
+anova_geo <- anova(prda_geo)
+
+# Pure structure model
+prda_struc <- rda(genotype_complete ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 +
+                  Condition(temp_annMaxMean + rain_annMean + elevation + veg_index + soil_nutrients + soil_ph), predictors, na.action = na.exclude, scale = T)
+r2_struc <- RsquareAdj(prda_struc)
+anova_struc <- anova(prda_struc)
+```
+
+```{r}
+# Create summary table
+`Partial RDA models` <- c("Full model", "Pure climate", "Pure geography", "Pure structure")
+Inertia <- c(anova_full$Variance[1], anova_clim$Variance[1], anova_geo$Variance[1], anova_struc$Variance[1])
+`Adjusted R^2` <- c(r2_full$adj.r.squared, r2_clim$adj.r.squared, r2_geo$adj.r.squared, r2_struc$adj.r.squared)
+`Pr(>F)` <- c(anova_full$`Pr(>F)`[1], anova_clim$`Pr(>F)`[1], anova_geo$`Pr(>F)`[1], anova_struc$`Pr(>F)`[1])
+
+prda_summary <- 
+  data.frame(`Partial RDA models`, Inertia, `Adjusted R^2`, `Pr(>F)`, check.names = F) %>%
+  mutate(Inertia = round(Inertia, 2)) %>%
+  mutate(`Adjusted R^2` = round(`Adjusted R^2`, 3)) %>%
+  mutate()
+
+rm(prda_full, prda_clim, prda_geo, prda_struc,
+   anova_full, anova_clim, anova_geo, anova_struc,
+   r2_full, r2_clim, r2_geo, r2_struc)
+
+prda_summary
+```
+
+Geography does not significantly explain the variation in SNPs, however, climate and structure do.  
+
+## Genotype-Environment Associations: identifying loci under selection
+```{r}
+rda_clim <- 
+  rda(genotype_complete ~ temp_annMaxMean + rain_annMean + elevation + veg_index + soil_nutrients + soil_ph +
+        Condition(PC1 + PC2 + PC3 + PC4 + PC5 + PC6), predictors, na.action = na.exclude, scale = T)
+rda_clim
+```
+
+Conditional = structure   
+Constrained = climate (RDA axes)  
+Unconstrained = PCA axes  
+```{r}
+r2_rda <- RsquareAdj(rda_clim)
+r2_rda
+```
+In this model, the climate variables explains about 1% of the variation (after accounting for structure).  
+
+This low explanatory power may be due to the SNPs analysed are neutral, also possibly because it's been conditioned with population structure.  
+
+```{r}
+screeplot(rda_clim)
+anova_rda <- anova.cca(rda_clim, by = "axis")
+anova_rda
+```
+Only RDA1 is significant, explaining the most variance.  
+
+## Identify putatively adaptive loci  
+Find outlier SNPs according to the tails of a normal distribution.  
+
+https://vitalflux.com/wp-content/uploads/2022/01/z-scores-formula-concepts-and-examples.jpg  
+
+```{r}
+snp_scores <-
+  scores(rda_clim, choices = 1:2, display = "species", scaling = 3) %>%
+  as.data.frame()
+
+sample_scores <- 
+  scores(rda_clim, choices = 1:2, display = "sites", scaling = 3) %>%
+  as.data.frame() %>%
+  mutate(Sample = rownames(.)) %>%
+  left_join(predictors %>% mutate(Sample = rownames(.)), by = "Sample")
+
+bp_scores <- 
+  scores(rda_clim, choices = 1:2, display = "bp", scaling = 3) %>%
+  as.data.frame()
+
+snp_scores %>%
+  pivot_longer(cols = RDA1:RDA2, names_to = "Axes") %>%
+  ggplot(aes(value)) +
+  geom_histogram(binwidth = 0.01) +
+  facet_wrap(facets = vars(Axes)) +
+  theme_light()
+
+outlier_snps <- function(snp_scores, rda_axis, z) {
+  limits <- mean(snp_scores[,rda_axis]) + c(-1, 1) * z * sd(snp_scores[,rda_axis])
+  print(limits)
+  x <-snp_scores[snp_scores[rda_axis] < limits[1] | snp_scores[rda_axis] > limits[2], ]
+  x %>% mutate(Outlier = paste("RDA", rda_axis, sep = ""))
+}
+
+rda1_outs <- outlier_snps(snp_scores, 1, 1.64485)
+rda2_outs <- outlier_snps(snp_scores, 2, 1.64485)
+
+rda_outs <- rbind(rda1_outs, rda2_outs)
+rm(rda1_outs, rda2_outs)
+
+rda_outs
+```
+
+```{r}
+snp_scores_outliers <- 
+  snp_scores %>%
+  add_rownames("Sample") %>%
+  left_join(rda_outs, by = c("RDA1", "RDA2")) %>%
+  mutate(Outlier = if_else(is.na(Outlier), "Neutral", Outlier))
+
+write.table(snp_scores_outliers, "outlier_snps.tsv", row.names = F, quote = F)
+  
+ggplot() +
+  geom_point(data = snp_scores_outliers, aes(RDA1, RDA2, color = Outlier), shape = 3, stroke = 1, alpha = 0.6) +
+  scale_color_manual(values = c("black", "blue", "red")) +
+  new_scale_color() +
+  geom_jitter(data = sample_scores, aes(RDA1, RDA2, color = State), alpha = 0.4) +
+  geom_segment(data = bp_scores, aes(xend = RDA1, yend = RDA2, x = 0, y = 0)) +
+  geom_text(data = bp_scores, aes(x = RDA1, y = RDA2, label = rownames(bp_scores))) +
+  theme_light()
+
+ggplot() +
+  geom_point(data = snp_scores_outliers, aes(RDA1, RDA2, color = Outlier), alpha = 0.6) +
+  scale_color_manual(values = c("lightgrey", "blue", "red")) +
+  geom_segment(data = bp_scores, aes(xend = RDA1, yend = RDA2, x = 0, y = 0)) +
+  geom_text(data = bp_scores, aes(x = RDA1, y = RDA2, label = rownames(bp_scores)), size = 2) +
+  theme_light()
+
+ggplot() +
+  geom_jitter(data = sample_scores, aes(RDA1, RDA2, color = State), alpha = 0.6) +
+  #geom_segment(data = bp_scores, aes(xend = RDA1, yend = RDA2, x = 0, y = 0)) +
+  #geom_text(data = bp_scores, aes(x = RDA1, y = RDA2, label = rownames(bp_scores)), size = 2) +
+  theme_light()
+```

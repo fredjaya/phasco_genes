@@ -13,7 +13,7 @@ library(tidyr)
 ## Load environmental variables ##
 # 10 environmental variables based on Lott et al. (2022) retrieved from ALA
 clim <- 
-  read.table("~/GitHub/phasco_genes/data/records-2022-06-08.tsv", sep = "\t", header = T, check.names = F) %>%
+  read.table("~/GitHub/phasco_genes/example/records-2022-06-08.tsv", sep = "\t", header = T, check.names = F) %>%
   select(Latitude = decimalLatitude, Longitude = decimalLongitude, 
          temp_annMaxMean = `Temperature - annual max mean`, 
          temp_annMinMean = `Temperature - annual min mean`,
@@ -25,6 +25,8 @@ clim <-
          soil_moisture_annMean = `Moisture Index - annual mean (Bio28)`,
          soil_nutrients = `Nutrient status`,
          soil_ph = `Ph - soil`)
+
+# Test for correlations between climate variables
 
 ## Extract coordinates ##
 # Load the koala metadata and extract the environmental variables that 
@@ -48,7 +50,8 @@ predictors <-
   distinct()
 
 rownames(predictors) <- predictors$Sample
-predictors <- predictors %>% select(-vcf.ID)  
+predictors <- predictors %>% select(-Koala.ID)  
 
 ## Save file ##
 saveRDS(predictors, "~/GitHub/phasco_genes/data/predictors.rds")
+rm(clim, coords, pc_vec)
